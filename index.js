@@ -119,6 +119,92 @@ app.get('/signup', async (req,res)=>{
     });
 });
 
+app.post('/api/signup', upload.single('shopImage'), async (req, res) => {
+    try {
+
+        // Check if the user already exists
+        const usersRef = db.collection('users');
+        const usernameSnapshot = await usersRef.where('username', '==', req.body.userName).get();
+        const emailSnapshot = await usersRef.where('email', '==', req.body.email).get();
+
+        if (!usernameSnapshot.empty) {
+            res.status(400).send("User already exists");
+            return;
+        }
+
+        if (!emailSnapshot.empty) {
+            res.status(400).send("Email already exists");
+            return;
+        }
+
+        const { userName, password, role, email, shopName, description } = req.body;
+
+        // Hash password
+        const hashedPassword = await hashPassword(password);
+
+        // Create user document
+        const userData = {
+            username: userName,
+            password: hashedPassword,
+            email: email,
+            role: role,
+            // Email is duplicated here, removed one instance
+        };
+        const userRef = await createDocument('users', userData);
+
+        // Set session variables
+        req.session.isLoggedIn = true;
+        req.session.isSeller = role === "SELLER";
+        req.session.userName = userName;
+        req.session.userId = userRef.id;
+
+        // Create shop document if user is a seller
+        if (role === "SELLER") {
+            // Upload image to Firebase Storage
+            const fileName = `${Date.now()}_${req.file.originalname}`;
+
+            await bucket.upload(req.file.path, {
+                destination: `shops/${fileName}`,
+                metadata: {
+                    contentType: req.file.mimetype
+                }
+            });
+
+            const imageLink = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/shops%2F${encodeURIComponent(fileName)}?alt=media`;
+
+            // Create shop data
+            const shopData = {
+                username: userName,
+                shopName: shopName,
+                description: description,
+                imageLink: imageLink,
+                isActive: true
+            };
+
+            // Create shop document
+            const shopRef = await createDocument('shops', shopData);
+
+            if (shopRef) {
+            } else {
+                res.status(500).send("Error creating shop");
+                return;
+            }
+        }
+
+        res.render("homepage", {
+            title: "Homepage",
+            isLoggedIn: req.session.isLoggedIn,
+            isSeller: req.session.isSeller,
+            userName: req.session.userName,
+            userId: req.session.userId
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).send('Error creating user');
+    }
+});
+
+
 app.get('/buyer/shop', async (req,res)=>{
     //Get the shops from the database
     const shopsRef = db.collection('shops');
@@ -165,6 +251,177 @@ app.get('/shop/:shopId/products', async (req, res) => {
     }
 });
 
+
+// Express route to add a product to the user's cart
+app.post('/api/cart/add-product', async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        if (!userId){
+            res.status(401).send('Unauthorized');
+            return;
+        }
+        const productId = req.body.productId;
+        const productQuantity = parseInt(req.body.quantity);
+
+        //Get the productPrice from the product doc
+        const productRef = db.collection('products').doc(productId);
+        const productDoc = await productRef.get();
+        const productData = productDoc.data();
+        const productPrice = productData.price;
+
+        //Get the product name, imagelink, currency
+        const productName = productData.name;
+        const imageLink = productData.imageLink;
+        const currency = productData.currency;
+
+
+        // Check if a cart already exists for the user
+        const cartRef = admin.firestore().collection('carts').where('userId', '==', userId);
+        const cartSnapshot = await cartRef.get();
+
+        if (cartSnapshot.empty) {
+            // Create a new cart document if it doesn't exist
+            const newCart = {
+                userId: userId,
+                products: [{
+                    productId: productId,
+                    price: productPrice, 
+                    quantity: productQuantity,
+                    name: productName,
+                    imageLink: imageLink,
+                    currency: currency
+                }],
+                totalPrice: (productPrice * productQuantity).toFixed(2)
+            };
+
+            await admin.firestore().collection('carts').add(newCart);
+            res.status(200).send('Product added to cart successfully');
+            return;
+        }
+            // Get the first cart document (assuming a user can have only one cart)
+            const cartDoc = cartSnapshot.docs[0];
+
+            const shopId = productData.shopId;
+            const cartProductId = cartDoc.data().products[0].productId;
+            //Get the shopId of the first product in the cart
+            const productRef2 = db.collection('products').doc(cartProductId);
+            const productDoc2 = await productRef2.get();
+            const productData2 = productDoc2.data();
+            const shopId2 = productData2.shopId;
+
+            
+            //If the first product in the cart's shop id is different from the product's shop id, return an error
+            if (shopId2 != shopId){
+                res.status(400).send('You can only add products from the same shop to your cart');
+                return;
+            }
+
+            //Check if the product exists
+            var productExists = false;
+            cartDoc.data().products.forEach(product => {
+                if (product.productId === productId){
+                    productExists = true;
+                }
+            });
+
+            if (productExists){
+            var newProductsList = cartDoc.data().products.map(product => {
+                if (product.productId === productId){
+                    product.quantity += productQuantity;
+                }
+                    return product;
+                });
+                //Commit the changes to the cart
+                await cartDoc.ref.update({
+                    products: newProductsList,
+                    totalPrice: newProductsList.reduce((acc, product) => acc + product.price * product.quantity, 0).toFixed(2)
+                });
+                res.status(200).send('Product added to cart successfully');
+                return;
+            }
+            // Update the cart document with the new product and recalculate the total price
+            const newProducts = [...cartDoc.data().products, {                     productId: productId,
+                price: productPrice, 
+                quantity: productQuantity,
+                name: productName,
+                imageLink: imageLink,
+                currency: currency}];
+            const newTotalPrice = newProducts.reduce((acc, product) => acc + product.price * product.quantity, 0).toFixed(2);
+
+            // Update the cart document in Firestore
+            await cartDoc.ref.update({
+                products: newProducts,
+                totalPrice: newTotalPrice
+            });
+        res.status(200).send('Product added to cart successfully');
+        return;
+    } catch (error) {
+        console.error('Error adding product to cart:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.post("/api/addproduct", upload.single('productImage'),async (req, res) => {
+    if (!req.session.isSeller) {
+        res.render("401", {
+            title: "Unauthorized",
+            isLoggedIn: req.session.isLoggedIn,
+            isSeller: req.session.isSeller,
+            userName: req.session.userName,
+            userId: req.session.userId
+        });
+        return;
+    }
+
+    const username = req.session.userName;
+    const productName = req.body.name;
+    const productPrice = parseFloat(req.body.price);
+    const isAvailable = true;
+    const currency = "USD";
+
+    // Get the shopId by the userId
+    const shopsRef = db.collection('shops');
+    const snapshot = await shopsRef.where('username', '==', username).get();
+    if (snapshot.empty) {
+        res.send("No matching documents");
+        return;
+    }
+    const shopId = snapshot.docs[0].id;
+
+    // Upload image to Firebase Storage
+    const productImage = req.file;
+    const fileName = `${Date.now()}_${productImage.originalname}`;
+
+    try {
+        var uploadResp = await bucket.upload(productImage.path, {
+            destination: `products/${fileName}`,
+            metadata: {
+                contentType: productImage.mimetype
+            }
+        });
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        res.status(500).send('Error uploading image');
+        return;
+    }
+
+    const imageLink = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/products%2F${encodeURIComponent(fileName)}?alt=media`;
+    const productData = {
+        name: productName,
+        price: productPrice,
+        isAvailable: isAvailable,
+        currency: currency,
+        shopId: shopId,
+        imageLink: imageLink
+    };
+
+    const docRef = await createDocument('products', productData);
+    if (docRef) {
+        res.redirect('/seller/products');
+    } else {
+        res.send("Error adding product");
+    }
+});
 
 app.get("/seller/addproduct", async (req,res)=>{
     if (!req.session.isSeller){
@@ -222,7 +479,65 @@ app.get("/seller/products", async (req,res)=>{
     });
 });
 
+app.post("/api/product/delete", async (req,res)=>{
+    if (!req.session.isSeller){
+        res.render("401", {
+            title: "Unauthorized",
+            isLoggedIn: req.session.isLoggedIn,
+            isSeller: req.session.isSeller,
+            userName: req.session.userName,
+            userId: req.session.userId
+        });
+        return;
+    }
 
+    const productId = req.body.productId;
+    const productRef = db.collection('products').doc(productId);
+    await productRef.delete();
+
+    //Remove this product from all of the carts if it exists.
+    const cartsRef = db.collection('carts');
+    const cartsSnapshot = await cartsRef.get();
+    cartsSnapshot.forEach(async doc => {
+        const cartData = doc.data();
+        const newProductsList = cartData.products.filter(product => product.productId != productId);
+        await doc.ref.update({
+            products: newProductsList,
+            totalPrice: newProductsList.reduce((acc, product) => acc + product.price * product.quantity, 0)
+        });
+    });
+    res.status(200).send("Product deleted successfully");
+});
+
+app.post("/api/product/edit", async (req,res)=>{
+    if (!req.session.isSeller){
+        res.render("401", {
+            title: "Unauthorized",
+            isLoggedIn: req.session.isLoggedIn,
+            isSeller: req.session.isSeller,
+            userName: req.session.userName,
+            userId: req.session.userId
+        });
+        return;
+    }
+
+    const productId = req.body.productId;
+    const productName = req.body.name;
+    const productPrice = parseFloat(req.body.price);
+    const isAvailable = req.body.isAvailable;
+    const currency = "USD";
+    const imageLink = req.body.imageLink;
+
+    const productRef = db.collection('products').doc(productId);
+    await productRef.update({
+        name: productName,
+        price: productPrice,
+        isAvailable: isAvailable,
+        currency: currency,
+        imageLink: imageLink
+    });
+    res.status(200).send("Product edited successfully");
+});
 
 app.get("/buyer/cart", async (req,res)=>{
     if (!req.session.isLoggedIn){
@@ -259,7 +574,82 @@ app.get("/buyer/cart", async (req,res)=>{
     });
 });
 
+app.post("/api/cart/remove", async (req,res)=>{
+    const userId = req.session.userId;
+    const cartsRef = db.collection('carts');
+    const snapshot = await cartsRef.where('userId', '==', userId).get();
+    if (snapshot.empty) {
+        res.send("Your cart is currently empty.");
+        return;
+    }
+    //If the quantity > 1, reduce quantity by 1, else delete the product from the cart
+    const productId = req.body.productId;
+    const cartDoc = snapshot.docs[0];
+    const cartData = cartDoc.data();
+    if (cartData.products.length == 1 && cartData.products[0].productId == productId && cartData.products[0].quantity == 1){
+        await cartDoc.ref.delete();
+        res.status(200).send("Cart deleted successfully");
+        return;
+    }
+    //Get the product from the cart
+    const product = cartData.products.find(product => product.productId == productId);
+    if (product.quantity > 1){
+        const newProductsList = cartData.products.map(product => {
+            if (product.productId == productId){
+                product.quantity -= 1;
+            }
+            return product;
+        });
+        await cartDoc.ref.update({
+            products: newProductsList,
+            totalPrice: newProductsList.reduce((acc, product) => acc + product.price * product.quantity, 0)
+        });
+        res.status(200).send("Product quantity reduced successfully");
+        return;
+    }
+    const newProductsList = cartData.products.filter(product => product.productId != productId);
+    await cartDoc.ref.update({
+        products: newProductsList,
+        totalPrice: newProductsList.reduce((acc, product) => acc + product.price * product.quantity, 0)
+    });
+    res.status(200).send("Product deleted successfully");
+});
 
+app.post("/api/cart/checkout", async (req,res)=>{
+    const userId = req.session.userId;
+    const cartsRef = db.collection('carts');
+    const snapshot = await cartsRef.where('userId', '==', userId).get();
+    if (snapshot.empty) {
+        res.send("Your cart is currently empty.");
+        return;
+    }
+    const cartDoc = snapshot.docs[0];
+    const cartData = cartDoc.data();
+    //Get the product from the cart
+    const productRef = db.collection('products');
+    const productSnapshot = await productRef.doc(cartData.products[0].productId).get();
+    
+    //Get the shopId from the product
+    const shopId = productSnapshot.data().shopId;
+
+    //Create a new order document
+    const orderData = {
+        userId: userId,
+        shopId: shopId,
+        products: cartData.products,
+        totalPrice: cartData.totalPrice,
+        //String with the current date
+        createdDate: new Date().toISOString()
+    };
+    const orderRef = await createDocument('orders', orderData);
+    if (orderRef){
+        //Delete the cart
+        await cartDoc.ref.delete();
+        res.status(200).send("Order placed successfully");
+        return;
+    }
+    res.send("Error placing order");
+});
 app.get("/seller/getorders", async (req, res) => {
     if (!req.session.isSeller){
         res.render("401", {
