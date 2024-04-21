@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="/assets/bootstrap/css/bootstrap.css">
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <script src="/assets/bootstrap/js/bootstrap.bundle.js"></script>
+</head>
+<body class="d-flex flex-column h-100">
+    <header>
+        <nav class="navbar navbar-expand-lg">
+            <div class="container-fluid ps-2 pe-2">
+                <a class="navbar-brand" href="/">Farmer's Market</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div id="navbarNav" class="collapse navbar-collapse">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a href="/" class="nav-link">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/buyer/shop" class="nav-link">Shops</a>
+                        </li>
+                        {{#if isSeller}}
+                        <li class="nav-item">
+                            <a href="/seller/products" class="nav-link">Products</a>
+                        </li>
+                        {{/if}}
+                        <li class="nav-item">
+                            <a href="/buyer/cart" class="nav-link">Cart</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a href="/cart" class="nav-link">
+                                <i class="fas fa-shopping-cart"></i>
+                            </a>
+                        </li>
+                        {{#if isLoggedIn}}
+                            <li class="nav-item">
+                                <a href="/my-profile" class="nav-link">{{userName}}</a>
+                            </li>
+                        {{else}}
+                            <li class="nav-item">
+                                <a href="/login" class="nav-link">Login</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/signup" class="nav-link">Sign Up</a>
+                            </li>
+                        {{/if}}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+<body>
+    <h1>Welcome, {{userName}}!</h1>
+    <button class="btn btn-primary" onclick="window.location.href='/seller/addproduct'">Add Product</button>
+    <h2>Your Products</h2>
+    <ul>
+        {{#each products}}
+            <li>
+                <div id="product_{{productId}}">
+                    <strong>{{name}}</strong><br>
+                    <img src="{{imageLink}}" alt="{{name}}" width="200" height="200"><br>
+                    <span id="price_{{productId}}">Price: {{price}} {{currency}}</span><br>
+                    {{#if isAvailable}}
+                        <span id="availability_{{productId}}">Availability: Available</span><br>
+                    {{else}}
+                        <span id="availability_{{productId}}">Availability: Out of Stock</span><br>
+                    {{/if}}
+                    <button class="btn btn-primary" onclick="editProduct('{{productId}}')">Edit</button>
+                    <button class="btn btn-danger" onclick="deleteProduct('{{productId}}')">Delete</button>
+                </div>
+                <div id="edit_{{productId}}" style="display:none;">
+                    <input type="text" id="edit_name_{{productId}}" value="{{name}}"><br>
+                    <input type="text" id="edit_imageLink_{{productId}}" value="{{imageLink}}"><br>
+                    <input type="number" id="edit_price_{{productId}}" value="{{price}}"><br>
+                    <input type="checkbox" id="edit_isAvailable_{{productId}}" {{#if isAvailable}}checked{{/if}}> Available<br>
+                    <button class="btn btn-primary" onclick="saveEdit('{{productId}}')">Save Edit</button>
+                    <button class="btn btn-secondary" onclick="cancelEdit('{{productId}}')">Cancel Edit</button>
+                </div>
+            </li>
+        {{/each}}
+    </ul>
+
+    <script>
+        function editProduct(productId) {
+            document.getElementById(`product_${productId}`).style.display = 'none';
+            document.getElementById(`edit_${productId}`).style.display = 'block';
+        }
+
+        function cancelEdit(productId) {
+            document.getElementById(`product_${productId}`).style.display = 'block';
+            document.getElementById(`edit_${productId}`).style.display = 'none';
+        }
+
+        function saveEdit(productId) {
+            const name = document.getElementById(`edit_name_${productId}`).value;
+            const imageLink = document.getElementById(`edit_imageLink_${productId}`).value;
+            const price = document.getElementById(`edit_price_${productId}`).value;
+            const isAvailable = document.getElementById(`edit_isAvailable_${productId}`).checked;
+
+            // Send API call to save edits
+            fetch('/api/product/edit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    productId,
+                    name,
+                    imageLink,
+                    price,
+                    isAvailable
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to save edits');
+                }
+                // Handle success.
+                alert('Edits saved successfully');
+                //Refresh the page
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error saving edits:', error);
+                // Handle errors, e.g., display an error message to the user
+            });
+        }
+
+        function deleteProduct(productId) {
+            // Send API call to delete product
+            fetch('/api/product/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ productId })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to delete product');
+                }
+                // Handle success, e.g., refresh the product list
+                document.getElementById(`product_${productId}`).remove();
+            })
+            .catch(error => {
+                console.error('Error deleting product:', error);
+                // Handle errors, e.g., display an error message to the user
+            });
+        }
+    </script>
+</body>
+</html>

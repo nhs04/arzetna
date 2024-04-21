@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="/assets/bootstrap/css/bootstrap.css">
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <script src="/assets/bootstrap/js/bootstrap.bundle.js"></script>
+</head>
+<body class="d-flex flex-column h-100">
+    <header>
+        <nav class="navbar navbar-expand-lg">
+            <div class="container-fluid ps-2 pe-2">
+                <a class="navbar-brand" href="/">Farmer's Market</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div id="navbarNav" class="collapse navbar-collapse">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a href="/" class="nav-link">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/buyer/shop" class="nav-link">Shops</a>
+                        </li>
+                        {{#if isSeller}}
+                        <li class="nav-item">
+                            <a href="/seller/products" class="nav-link">Products</a>
+                        </li>
+                        {{/if}}
+                        <li class="nav-item">
+                            <a href="/buyer/cart" class="nav-link">Cart</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a href="/cart" class="nav-link">
+                                <i class="fas fa-shopping-cart"></i>
+                            </a>
+                        </li>
+                        {{#if isLoggedIn}}
+                            <li class="nav-item">
+                                <a href="/my-profile" class="nav-link">{{userName}}</a>
+                            </li>
+                        {{else}}
+                            <li class="nav-item">
+                                <a href="/login" class="nav-link">Login</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/signup" class="nav-link">Sign Up</a>
+                            </li>
+                        {{/if}}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <!-- shops.hbs -->
+{{#if shops}}
+  <div class="container">
+    <div class="row">
+      {{#each shops}}
+      <div class="col-md-4 mb-4">
+        <div class="card" id="card" onclick="fetchProducts('{{shopId}}')">
+          <img src={{imageLink}} class="card-img-top" alt="{{shopName}}" style="height: 200px; object-fit: cover; object-position: center;">
+          <div class="card-body">
+            <h5 class="card-title">{{shopName}}</h5>
+            <p class="card-text">{{description}}</p>
+            <p class="card-text"><small class="text-muted">By {{username}}</small></p>
+            {{#if isActive}}
+              <span class="badge bg-success">Active</span>
+            {{else}}
+              <span class="badge bg-danger">Inactive</span>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+{{else}}
+  <p>No shops available.</p>
+{{/if}}
+
+<script>
+  async function fetchProducts(shopId) {
+    window.location.href = `/shop/${shopId}/products`;
+  }
+</script>
+</body>
+</html>

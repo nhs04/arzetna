@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+       
+    </style>
+</head>
+<body>
+    <form id="profileForm">
+        <h2>User Profile</h2>
+        <input type="text" id="fullName" name="fullName" placeholder="Full Name" value="#{user.name}">
+        <input type="text" id="username" name="username" placeholder="Username">
+        <input type="email" id="email" name="email" placeholder="Email">
+        <input type="text" id="location" name="location" placeholder="Location">
+        <input type="url" id="website" name="website" placeholder="Website (optional)">
+        <textarea id="profileDescription" name="profileDescription" placeholder="Profile Description"></textarea>
+        //- <select id="userType" name="userType">
+        //-     <option value="seller" >Seller</option>
+        //-     <option value="buyer">Buyer</option>
+        //- </select>
+        select(id="userType" name="userType")
+            option(value="seller", selected=userType === 'seller') Seller
+            option(value="buyer", selected=userType === 'buyer') Buyer
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
+

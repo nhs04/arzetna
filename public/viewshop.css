@@ -1,0 +1,50 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #70ad47; /* Green background color */
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #fff; /* White container background */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Slight shadow */
+  border-radius: 10px; /* Rounded corners */
+}
+
+h1 {
+  color: #333; /* Dark gray heading */
+}
+
+.shop {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-gap: 20px;
+}
+
+.product {
+  border: 1px solid #ccc;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #fff; /* White background */
+}
+
+.product:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(0, 128, 0, 0.2); /* Green shadow on hover */
+}
+
+.selected {
+  background-color: #f0f0f0; /* Light gray background for selected product */
+}
+
+h2 {
+  color: #333; /* Dark gray heading */
+}
+
+p {
+  color: #666; /* Gray text */
+}
