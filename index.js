@@ -55,7 +55,8 @@ app.get('/', async (req,res)=>{
     const isSeller = req.session.isSeller;
     const userName = req.session.userName;
     const userId = req.session.userId;
-    res.render("homepage", {title: "Homepage", isLoggedIn: isLoggedIn, isSeller: isSeller, userName: userName, userId: userId});
+    const isAdmin = req.session.isAdmin;
+    res.render("homepage", {title: "Homepage", isLoggedIn: isLoggedIn, isSeller: isSeller, userName: userName, userId: userId, isAdmin: isAdmin});
 });
 
 app.get('/homepage', async (req,res)=>{
@@ -64,17 +65,19 @@ app.get('/homepage', async (req,res)=>{
      isLoggedIn: req.session.isLoggedIn,
      isSeller: req.session.isSeller,
      userName: req.session.userName,
-      userId: req.session.userId
+        userId: req.session.userId,
+        isAdmin: req.session.isAdmin
     });
 });
 
 app.get('/login', async (req,res)=>{
     res.render("login", {
         title: "Login",
-     isLoggedIn: req.session.isLoggedIn,
-     isSeller: req.session.isSeller,
-     userName: req.session.userName,
-      userId: req.session.userId
+        isLoggedIn: req.session.isLoggedIn,
+        isSeller: req.session.isSeller,
+        userName: req.session.userName,
+           userId: req.session.userId,
+           isAdmin: req.session.isAdmin
     });
 });
 
@@ -96,12 +99,14 @@ app.post('/api/login', async (req,res)=>{
             req.session.isSeller = data.role == "SELLER"
             req.session.userName = data.username;
             req.session.userId = doc.id;
+            req.session.isAdmin = data.role == "ADMIN";
             res.render("homepage", {
                 title: "Homepage",
-             isLoggedIn: req.session.isLoggedIn,
-             isSeller: req.session.isSeller,
-             userName: req.session.userName,
-              userId: req.session.userId
+                isLoggedIn: req.session.isLoggedIn,
+                isSeller: req.session.isSeller,
+                userName: req.session.userName,
+                   userId: req.session.userId,
+                   isAdmin: req.session.isAdmin
             });
         } else {
             res.status(400).send("Incorrect password");
@@ -112,10 +117,11 @@ app.post('/api/login', async (req,res)=>{
 app.get('/signup', async (req,res)=>{
     res.render("signup", {
         title: "Sign Up",
-     isLoggedIn: req.session.isLoggedIn,
-     isSeller: req.session.isSeller,
-     userName: req.session.userName,
-      userId: req.session.userId
+        isLoggedIn: req.session.isLoggedIn,
+        isSeller: req.session.isSeller,
+        userName: req.session.userName,
+           userId: req.session.userId,
+           isAdmin: req.session.isAdmin
     });
 });
 
@@ -148,7 +154,8 @@ app.post('/api/signup', upload.single('shopImage'), async (req, res) => {
             password: hashedPassword,
             email: email,
             role: role,
-            // Email is duplicated here, removed one instance
+            emailApproved: false,
+            adminApproved: role === "BUYER" ? true : false
         };
         const userRef = await createDocument('users', userData);
 
@@ -157,6 +164,7 @@ app.post('/api/signup', upload.single('shopImage'), async (req, res) => {
         req.session.isSeller = role === "SELLER";
         req.session.userName = userName;
         req.session.userId = userRef.id;
+        req.session.isAdmin = role === "ADMIN";
 
         // Create shop document if user is a seller
         if (role === "SELLER") {
@@ -174,11 +182,12 @@ app.post('/api/signup', upload.single('shopImage'), async (req, res) => {
 
             // Create shop data
             const shopData = {
-                username: userName,
+                userId: userRef.id,
+                userActive: false,
                 shopName: shopName,
                 description: description,
                 imageLink: imageLink,
-                isActive: true
+                isActive: false,
             };
 
             // Create shop document
@@ -196,7 +205,8 @@ app.post('/api/signup', upload.single('shopImage'), async (req, res) => {
             isLoggedIn: req.session.isLoggedIn,
             isSeller: req.session.isSeller,
             userName: req.session.userName,
-            userId: req.session.userId
+               userId: req.session.userId,
+               isAdmin: req.session.isAdmin
         });
     } catch (error) {
         console.error('Error:', error);
@@ -208,17 +218,20 @@ app.post('/api/signup', upload.single('shopImage'), async (req, res) => {
 app.get('/buyer/shop', async (req,res)=>{
     //Get the shops from the database
     const shopsRef = db.collection('shops');
-    const snapshot = await shopsRef.get();
+
+    //Get the shops where isActive = true and userActive = true
+    const snapshot = await shopsRef.where('isActive', '==', true).where('userActive', '==', true).get();
+
     const shops = [];
-    //Add the shops to the list with each shop's id
     snapshot.forEach(doc => {
         shops.push({shopId: doc.id, ...doc.data()});
     });
     res.render("shops", {
-     isLoggedIn: req.session.isLoggedIn,
-     isSeller: req.session.isSeller,
-     userName: req.session.userName,
-      userId: req.session.userId,
+        isLoggedIn: req.session.isLoggedIn,
+        isSeller: req.session.isSeller,
+        userName: req.session.userName,
+           userId: req.session.userId,
+           isAdmin: req.session.isAdmin,
       shops: shops
     });
 });
@@ -231,11 +244,24 @@ app.get('/shop/:shopId/products', async (req, res) => {
         const productsSnapshot = await admin.firestore().collection('products').where('shopId', '==', shopId).get();
 
         const productList = [];
-        productsSnapshot.forEach(doc => {
+        for (const doc of productsSnapshot.docs) {
             const productData = doc.data();
+            //Get all the reviews for this product;
+            const reviewsRef = db.collection('reviews').where('productId', '==', doc.id);
+            const reviewsSnapshot = await reviewsRef.get(); // Await here
+
+            const reviews = [];
+            reviewsSnapshot.forEach(reviewDoc => {
+                reviews.push(reviewDoc.data());
+            });
+
+            console.log(reviews);
+
             // Add the actual document ID to the product data
-            productList.push({ productId: doc.id, ...productData });
-        });
+            productList.push({ productId: doc.id, reviews: reviews, ...productData });
+        }
+
+        console.log(productList);
 
         // Send products data as the response
         res.render('products', {
@@ -243,6 +269,7 @@ app.get('/shop/:shopId/products', async (req, res) => {
             isSeller: req.session.isSeller,
             userName: req.session.userName,
             userId: req.session.userId,
+            isAdmin: req.session.isAdmin,
             products: productList
         });
     } catch (error) {
@@ -250,6 +277,7 @@ app.get('/shop/:shopId/products', async (req, res) => {
         res.send("Error getting products");
     }
 });
+
 
 
 // Express route to add a product to the user's cart
@@ -368,12 +396,12 @@ app.post("/api/addproduct", upload.single('productImage'),async (req, res) => {
             isLoggedIn: req.session.isLoggedIn,
             isSeller: req.session.isSeller,
             userName: req.session.userName,
-            userId: req.session.userId
+               userId: req.session.userId,
+               isAdmin: req.session.isAdmin
         });
         return;
     }
 
-    const username = req.session.userName;
     const productName = req.body.name;
     const productPrice = parseFloat(req.body.price);
     const isAvailable = true;
@@ -381,7 +409,7 @@ app.post("/api/addproduct", upload.single('productImage'),async (req, res) => {
 
     // Get the shopId by the userId
     const shopsRef = db.collection('shops');
-    const snapshot = await shopsRef.where('username', '==', username).get();
+    const snapshot = await shopsRef.where('userId', '==', req.session.userId).get();
     if (snapshot.empty) {
         res.send("No matching documents");
         return;
@@ -430,16 +458,18 @@ app.get("/seller/addproduct", async (req,res)=>{
             isLoggedIn: req.session.isLoggedIn,
             isSeller: req.session.isSeller,
             userName: req.session.userName,
-            userId: req.session.userId
+               userId: req.session.userId,
+               isAdmin: req.session.isAdmin
         });
         return;
     }
     res.render("addproduct", {
     title: "Add Product",
-     isLoggedIn: req.session.isLoggedIn,
-     isSeller: req.session.isSeller,
-     userName: req.session.userName,
-     userId: req.session.userId
+    isLoggedIn: req.session.isLoggedIn,
+    isSeller: req.session.isSeller,
+    userName: req.session.userName,
+       userId: req.session.userId,
+       isAdmin: req.session.isAdmin
     });
 });
 
@@ -450,13 +480,14 @@ app.get("/seller/products", async (req,res)=>{
             isLoggedIn: req.session.isLoggedIn,
             isSeller: req.session.isSeller,
             userName: req.session.userName,
-            userId: req.session.userId
+               userId: req.session.userId,
+               isAdmin: req.session.isAdmin
         });
         return;
     }
 
     const shopsRef = db.collection('shops');
-    const snapshot = await shopsRef.where('username', '==', req.session.userName).get();
+    const snapshot = await shopsRef.where('userId', '==', req.session.userId).get();
     if (snapshot.empty) {
         res.send("No matching documents");
         return;
@@ -471,10 +502,11 @@ app.get("/seller/products", async (req,res)=>{
     });
     res.render("sellerproducts", {
     title: "Products",
-     isLoggedIn: req.session.isLoggedIn,
-     isSeller: req.session.isSeller,
-     userName: req.session.userName,
-      userId: req.session.userId,
+    isLoggedIn: req.session.isLoggedIn,
+    isSeller: req.session.isSeller,
+    userName: req.session.userName,
+       userId: req.session.userId,
+       isAdmin: req.session.isAdmin,
       products: products
     });
 });
@@ -486,7 +518,8 @@ app.post("/api/product/delete", async (req,res)=>{
             isLoggedIn: req.session.isLoggedIn,
             isSeller: req.session.isSeller,
             userName: req.session.userName,
-            userId: req.session.userId
+               userId: req.session.userId,
+               isAdmin: req.session.isAdmin,
         });
         return;
     }
@@ -516,7 +549,8 @@ app.post("/api/product/edit", async (req,res)=>{
             isLoggedIn: req.session.isLoggedIn,
             isSeller: req.session.isSeller,
             userName: req.session.userName,
-            userId: req.session.userId
+               userId: req.session.userId,
+               isAdmin: req.session.isAdmin
         });
         return;
     }
@@ -558,7 +592,8 @@ app.get("/buyer/cart", async (req,res)=>{
             isLoggedIn: req.session.isLoggedIn,
             isSeller: req.session.isSeller,
             userName: req.session.userName,
-            userId: req.session.userId,
+               userId: req.session.userId,
+               isAdmin: req.session.isAdmin,
             cart: null
         });
         return;
@@ -617,6 +652,21 @@ app.post("/api/cart/remove", async (req,res)=>{
 
 app.post("/api/cart/checkout", async (req,res)=>{
     const userId = req.session.userId;
+    //Get the user's adminApproved status
+    const userRef = db.collection('users').doc(userId);
+    const userSnapshot = await userRef.get();
+    if (!userSnapshot.exists) {
+        res.send("No matching documents");
+        return;
+    }
+    const userData = userSnapshot.data();
+
+    console.log(userData);
+    if (userData.adminApproved == false){
+        res.status(401).send("You are not approved to place orders");
+        return;
+    }
+
     const cartsRef = db.collection('carts');
     const snapshot = await cartsRef.where('userId', '==', userId).get();
     if (snapshot.empty) {
@@ -639,7 +689,7 @@ app.post("/api/cart/checkout", async (req,res)=>{
         products: cartData.products,
         totalPrice: cartData.totalPrice,
         //String with the current date
-        createdDate: new Date().toISOString()
+        createdDate: new Date().toLocaleTimeString()
     };
     const orderRef = await createDocument('orders', orderData);
     if (orderRef){
@@ -657,13 +707,14 @@ app.get("/seller/getorders", async (req, res) => {
             isLoggedIn: req.session.isLoggedIn,
             isSeller: req.session.isSeller,
             userName: req.session.userName,
-            userId: req.session.userId
+               userId: req.session.userId,
+               isAdmin: req.session.isAdmin
         });
         return;
     }
 
     const shopsRef = db.collection('shops');
-    const snapshot = await shopsRef.where('username', '==', req.session.userName).get();
+    const snapshot = await shopsRef.where('userId', '==', req.session.userId).get();
     if (snapshot.empty) {
         res.send("No matching documents");
         return;
@@ -686,6 +737,7 @@ app.get("/seller/getorders", async (req, res) => {
         isSeller: req.session.isSeller,
         userName: req.session.userName,
         userId: req.session.userId,
+        isAdmin: req.session.isAdmin,
         orders: orders
     });
 });
@@ -702,10 +754,11 @@ app.get("/my-profile", async (req,res)=>{
     const userData = userSnapshot.data();
     res.render("profile", {
         title: "Profile",
-     isLoggedIn: req.session.isLoggedIn,
-     isSeller: req.session.isSeller,
-     userName: req.session.userName,
-    userId: req.session.userId,
+        isLoggedIn: req.session.isLoggedIn,
+        isSeller: req.session.isSeller,
+        userName: req.session.userName,
+           userId: req.session.userId,
+           isAdmin: req.session.isAdmin,
     data: userData
     });
 });
@@ -715,6 +768,7 @@ app.get('/logout', async (req,res)=>{
     req.session.isSeller = false;
     req.session.userName = "";
     req.session.userId = "";
+    req.session.isAdmin = false;
     res.render("homepage", {
         title: "Homepage",
      isLoggedIn: req.session.isLoggedIn,
@@ -723,6 +777,171 @@ app.get('/logout', async (req,res)=>{
       userId: req.session.userId
     });
 });
+
+app.get('/admin/sellerrequests', async (req,res)=>{
+    if (!req.session.isAdmin){
+        res.render("401", {
+            title: "Unauthorized",
+            isLoggedIn: req.session.isLoggedIn,
+            isSeller: req.session.isSeller,
+            userName: req.session.userName,
+               userId: req.session.userId,
+               isAdmin: req.session.isAdmin
+        });
+    }
+    //Get all the users from the database where role == SELLER, order by adminApproved
+    const usersRef = db.collection('users');
+    const snapshot = await usersRef.where('role', '==', 'SELLER').get();
+    const users = [];
+    snapshot.forEach(doc => {
+        users.push({userId: doc.id, ...doc.data()});
+    });
+    console.log(users);
+    res.render("sellerrequests", {
+        title: "Seller Requests",
+        isLoggedIn: req.session.isLoggedIn,
+        isSeller: req.session.isSeller,
+        userName: req.session.userName,
+           userId: req.session.userId,
+           isAdmin: req.session.isAdmin,
+        users: users
+    });
+});
+
+app.get('/admin/approve-seller/:userId', async (req,res)=>{
+    if (!req.session.isAdmin){
+        res.render("401", {
+            title: "Unauthorized",
+            isLoggedIn: req.session.isLoggedIn,
+            isSeller: req.session.isSeller,
+            userName: req.session.userName,
+               userId: req.session.userId,
+               isAdmin: req.session.isAdmin
+        });
+    }
+    
+    const userId = req.params.userId
+    console.log(userId);
+    const userRef = db.collection('users').doc(userId);
+    //get the user's data
+    const userSnapshot = await userRef.get();
+
+    await userRef.update({
+        adminApproved: !userSnapshot.data().adminApproved
+    });
+
+    const shopRef = db.collection('shops').where('userId', '==', userId);
+    const shopSnapshot = await shopRef.get();
+    if (shopSnapshot.empty){
+        res.send("No matching documents");
+        return;
+    }
+    const shopDoc = shopSnapshot.docs[0];
+    await shopDoc.ref.update({
+        userActive: !userSnapshot.data().adminApproved,
+        isActive: !userSnapshot.data().adminApproved
+    });
+    res.redirect('/admin/sellerrequests');
+    return;
+});
+
+app.get('/admin/getbuyers', async (req,res) => {
+    //Get all the buyers, along with their total spent to date.
+    if (!req.session.isAdmin){
+        res.render("401", {
+            title: "Unauthorized",
+            isLoggedIn: req.session.isLoggedIn,
+            isSeller: req.session.isSeller,
+            userName: req.session.userName,
+               userId: req.session.userId,
+               isAdmin: req.session.isAdmin
+        });
+    }
+    const usersRef = db.collection('users');
+    const snapshot = await usersRef.where('role', '==', 'BUYER').get();
+    const users = [];
+    await Promise.all(snapshot.docs.map(async doc => {
+        const userId = doc.id;
+        const ordersRef = db.collection('orders').where('userId', '==', userId);
+        const ordersSnapshot = await ordersRef.get();
+        const totalSpent = ordersSnapshot.docs.reduce((acc, order) => acc + order.data().totalPrice, 0);
+        users.push({userId: userId, totalSpent: totalSpent, ...doc.data()});
+    }));
+
+    res.render("buyers", {
+        title: "Buyers",
+        isLoggedIn: req.session.isLoggedIn,
+        isSeller: req.session.isSeller,
+        userName: req.session.userName,
+           userId: req.session.userId,
+           isAdmin: req.session.isAdmin,
+        users: users
+    });
+});
+
+
+app.get('/admin/approve-buyer/:userId', async (req,res)=>{
+    if (!req.session.isAdmin){
+        res.render("401", {
+            title: "Unauthorized",
+            isLoggedIn: req.session.isLoggedIn,
+            isSeller: req.session.isSeller,
+            userName: req.session.userName,
+               userId: req.session.userId,
+               isAdmin: req.session.isAdmin
+        });
+    }
+    
+    const userId = req.params.userId
+
+    const userRef = db.collection('users').doc(userId);
+    //get the user's data
+    const userSnapshot = await userRef.get();
+
+    await userRef.update({
+        adminApproved: !userSnapshot.data().adminApproved
+    });
+    res.redirect('/admin/getbuyers');
+    return;
+});
+
+
+app.post('/buyer/addreview', async (req, res) => {
+    if (!req.session.isLoggedIn){
+        res.render("401", {
+            title: "Unauthorized",
+            isLoggedIn: req.session.isLoggedIn,
+            isSeller: req.session.isSeller,
+            userName: req.session.userName,
+            isAdmin: req.session.isAdmin,
+            userId: req.session.userId
+        });
+        return;
+    }
+    console.log(req.body);
+    const productId = req.body.productId;
+    const rating = parseInt(req.body.rating);
+    const review = req.body.review;
+    const userId = req.session.userId;
+
+
+    const reviewData = {
+        productId: productId,
+        userId: userId,
+        rating: rating,
+        review: review
+    };
+
+    const reviewRef = await createDocument('reviews', reviewData);
+    if (reviewRef){
+        res.status(200).send("Review added successfully");
+        return;
+    }
+    res.send("Error adding review");
+    
+});
+
+
 
 app.listen(3001,()=>{
     console.log("Server is running on port 3001")

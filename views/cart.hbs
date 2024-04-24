@@ -98,6 +98,10 @@
             })
             .then(response => {
                 if (!response.ok) {
+                    if (response.status == 401){
+                        alert("You are not approved, you cannot purchase items");
+                        return;
+                    }
                     throw new Error('Failed to complete purchase');
                 }
                 alert('Purchase completed successfully');

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>{{title}}</title>
     <link rel="stylesheet" href="/assets/bootstrap/css/bootstrap.css">
     <link rel="stylesheet" href="/stylesheets/style.css">
     <script src="/assets/bootstrap/js/bootstrap.bundle.js"></script>
@@ -41,7 +41,7 @@
                         </li>
                         {{#if isLoggedIn}}
                             <li class="nav-item">
-                                <a href="/my-profile" class="nav-link">{{ userName }}</a>
+                                <a href="/my-profile" class="nav-link">{{userName}}</a>
                             </li>
                         {{else}}
                             <li class="nav-item">
@@ -56,40 +56,46 @@
             </div>
         </nav>
     </header>
-    <div class="flex-shrink-0">
-        <div style="height: 100px; margin-top: 100px;" class="text-center">
-            <h1>Welcome, {{ userName }}!</h1>
-        </div>
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-6">
-                    <div class="card mt-5">
-                        <div class="card-body">
-                            <h5 class="card-title">User Information</h5>
-                            <p class="card-text">Email: {{ data.email }}</p>
-                            <p class="card-text">Username: {{ data.username }}</p>
-                            <p class="card-text">Role: {{ data.role }}</p>
-                            {{#if isSeller}}
-                                <a href="/seller/getorders" class="btn btn-primary">View Orders</a>
+
+    <div class="container mt-4">
+        <h1>{{title}}</h1>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Email Approved</th>
+                        <th>Admin Approved</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each users}}
+                    <tr>
+                        <td>{{this.username}}</td>
+                        <td>{{this.email}}</td>
+                        <td>{{this.emailApproved}}</td>
+                        <td>{{this.adminApproved}}</td>
+                        <td>
+                            {{#if this.adminApproved}}
+                            <button class="btn btn-success" onclick="approveUser('{{this.userId}}')">Disapprove</button>
+                            {{else}}
+                            <button class="btn btn-success" onclick="approveUser('{{this.userId}}')">Approve</button>
                             {{/if}}
-                            {{#if isAdmin}}
-                                <a href="/admin/sellerrequests" class="btn btn-primary">Seller Requests</a>
-                                <a href="/admin/getbuyers" class="btn btn-primary">View Buyers</a>
-                            {{/if}}
-                            
-                            <a href="/logout" class="btn btn-primary">Log out</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
         </div>
     </div>
-    <footer class="footer mt-auto">
-        <p>&copy; 2024 [Arztna]. All rights reserved.</p>
-        <ul class="footer-links">
-            <li><a href="#">Terms of Service</a></li>
-            <li><a href="#">Privacy Policy</a></li>
-        </ul>
-    </footer>
+
+    <script>
+        function approveUser(userId) {
+            //Send him to /approve-seller/:userId
+            window.location.href = `/admin/approve-seller/${userId}`;
+        }
+    </script>
 </body>
 </html>
