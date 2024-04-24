@@ -1,32 +1,42 @@
-    <h1>Welcome, {{userName}}!</h1>
-    <button class="btn btn-primary" onclick="window.location.href='/seller/addproduct'">Add Product</button>
-    <h2>Your Products</h2>
-    <ul>
-        {{#each products}}
-            <li>
-                <div id="product_{{productId}}">
-                    <strong>{{name}}</strong><br>
-                    <img src="{{imageLink}}" alt="{{name}}" width="200" height="200"><br>
-                    <span id="price_{{productId}}">Price: {{price}} {{currency}}</span><br>
-                    {{#if isAvailable}}
-                        <span id="availability_{{productId}}">Availability: Available</span><br>
-                    {{else}}
-                        <span id="availability_{{productId}}">Availability: Out of Stock</span><br>
-                    {{/if}}
-                    <button class="btn btn-primary" onclick="editProduct('{{productId}}')">Edit</button>
-                    <button class="btn btn-danger" onclick="deleteProduct('{{productId}}')">Delete</button>
-                </div>
-                <div id="edit_{{productId}}" style="display:none;">
-                    <input type="text" id="edit_name_{{productId}}" value="{{name}}"><br>
-                    <input type="text" id="edit_imageLink_{{productId}}" value="{{imageLink}}"><br>
-                    <input type="number" id="edit_price_{{productId}}" value="{{price}}"><br>
-                    <input type="checkbox" id="edit_isAvailable_{{productId}}" {{#if isAvailable}}checked{{/if}}> Available<br>
-                    <button class="btn btn-primary" onclick="saveEdit('{{productId}}')">Save Edit</button>
-                    <button class="btn btn-secondary" onclick="cancelEdit('{{productId}}')">Cancel Edit</button>
-                </div>
-            </li>
-        {{/each}}
-    </ul>
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h1>Welcome, {{userName}}!</h1>
+            <button class="btn btn-primary" onclick="window.location.href='/seller/addproduct'">Add Product</button>
+            {{#if products.length}}
+                <p>You have no products listed. Start by adding your first product now!</p>
+            {{else}}
+                <h2>Your Products</h2>
+                <ul>
+                    {{#each products}}
+                        <li>
+                            <div id="product_{{productId}}">
+                                <strong>{{name}}</strong><br>
+                                <img src="{{imageLink}}" alt="{{name}}" width="200" height="200"><br>
+                                <span id="price_{{productId}}">Price: {{price}} {{currency}}</span><br>
+                                {{#if isAvailable}}
+                                    <span id="availability_{{productId}}">Availability: Available</span><br>
+                                {{else}}
+                                    <span id="availability_{{productId}}">Availability: Out of Stock</span><br>
+                                {{/if}}
+                                <button class="btn btn-primary" onclick="editProduct('{{productId}}')">Edit</button>
+                                <button class="btn btn-danger" onclick="deleteProduct('{{productId}}')">Delete</button>
+                            </div>
+                            <div id="edit_{{productId}}" style="display:none;">
+                                <input type="text" id="edit_name_{{productId}}" value="{{name}}"><br>
+                                <input type="text" id="edit_imageLink_{{productId}}" value="{{imageLink}}"><br>
+                                <input type="number" id="edit_price_{{productId}}" value="{{price}}"><br>
+                                <input type="checkbox" id="edit_isAvailable_{{productId}}" {{#if isAvailable}}checked{{/if}}> Available<br>
+                                <button class="btn btn-primary" onclick="saveEdit('{{productId}}')">Save Edit</button>
+                                <button class="btn btn-secondary" onclick="cancelEdit('{{productId}}')">Cancel Edit</button>
+                            </div>
+                        </li>
+                    {{/each}}
+                </ul>
+            {{/if}}
+        </div>
+    </div>
+</div>
 
     <script>
         function editProduct(productId) {

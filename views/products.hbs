@@ -1,80 +1,80 @@
 <div class="container mt-4">
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <input id="searchInput" type="text" class="form-control" placeholder="Search by product name" onkeyup="searchProducts()">
-            </div>
-            <div class="col-md-6 text-end">
-                <button id="sortButton" class="btn btn-primary" onclick="toggleSort()">Sort by Price</button>
-            </div>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <input id="searchInput" type="text" class="form-control" placeholder="Search by product name" onkeyup="searchProducts()">
         </div>
-        <div class="row">
-            {{#if products}}
-                {{#each products}}
-                    <div class="col-md-4 mb-4 product-card">
-                        <div class="card">
-                            <img src="{{ imageLink }}" class="card-img-top" alt="{{ name }}" style="height: 200px; object-fit: cover;">
-                            <div class="card-body">
-                                <h5 class="card-title">{{ name }}</h5>
-                                <p class="card-text">{{ price }} {{ currency }}</p>
-                                {{#if isAvailable}}
-                                    <p class="card-text">Available</p>
-                                    <input id="quantity-{{ productId }}" type="number" class="form-control mb-2" placeholder="Quantity">
-                                    <button class="btn btn-primary mb-2" onclick="addToCart('{{ productId }}')">Add to Cart</button>
-                                    <button type="button" class="btn btn-primary mb-2" onclick="openAddReviewModal('{{ productId }}')">Add Review</button>
-                                {{else}}
-                                    <p class="card-text">Out of Stock</p>
-                                    <button class="btn btn-primary" disabled>Add to Cart</button>
-                                {{/if}}
-                                <button type="button" class="btn btn-primary" onclick="openViewReviewsModal('{{ productId }}')">View Reviews</button>
-                            </div>
+        <div class="col-md-6 text-end">
+            <button id="sortButton" class="btn btn-primary" onclick="toggleSort()">Sort by Price</button>
+        </div>
+    </div>
+    <div class="row">
+        {{#if products}}
+            {{#each products}}
+                <div class="col-md-4 mb-4 product-card">
+                    <div class="card">
+                        <img src="{{ imageLink }}" class="card-img-top" alt="{{ name }}" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ name }}</h5>
+                            <p class="card-text">{{ price }} {{ currency }}</p>
+                            {{#if isAvailable}}
+                                <p class="card-text">Available</p>
+                                <input id="quantity-{{ productId }}" type="number" class="form-control mb-2" placeholder="Quantity">
+                                <button class="btn btn-primary mb-2" onclick="addToCart('{{ productId }}')">Add to Cart</button>
+                                <button type="button" class="btn btn-primary mb-2" onclick="openAddReviewModal('{{ productId }}')">Add Review</button>
+                            {{else}}
+                                <p class="card-text">Out of Stock</p>
+                                <button class="btn btn-primary" disabled>Add to Cart</button>
+                            {{/if}}
+                            <button type="button" class="btn btn-primary" onclick="openViewReviewsModal('{{ productId }}')">View Reviews</button>
                         </div>
                     </div>
-                {{/each}}
-            {{else}}
-                <p>No products available.</p>
-            {{/if}}
-        </div>
+                </div>
+            {{/each}}
+        {{else}}
+            <p>No products available.</p>
+        {{/if}}
     </div>
+</div>
 
-    <!-- Add Review Modal -->
-    <div class="modal fade" id="addReviewModal" tabindex="-1" aria-labelledby="addReviewModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addReviewModalLabel">Add Review</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addReviewForm">
-                        <div class="mb-3">
-                            <label for="rating">Rating:</label>
-                            <input type="number" id="rating" name="rating" min="1" max="5" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="review">Review:</label>
-                            <textarea id="review" name="review" rows="3" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Add Review</button>
-                    </form>
-                </div>
+<!-- Add Review Modal -->
+<div class="modal fade" id="addReviewModal" tabindex="-1" aria-labelledby="addReviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addReviewModalLabel">Add Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addReviewForm">
+                    <div class="mb-3">
+                        <label for="rating">Rating:</label>
+                        <input type="number" id="rating" name="rating" min="1" max="5" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="review">Review:</label>
+                        <textarea id="review" name="review" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Review</button>
+                </form>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- View Reviews Modal -->
-    <div class="modal fade" id="viewReviewsModal" tabindex="-1" aria-labelledby="viewReviewsModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="viewReviewsModalLabel">Product Reviews</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="reviewsList">
-                    <!-- Reviews will be populated here -->
-                </div>
+<!-- View Reviews Modal -->
+<div class="modal fade" id="viewReviewsModal" tabindex="-1" aria-labelledby="viewReviewsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewReviewsModalLabel">Product Reviews</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="reviewsList">
+                <!-- Reviews will be populated here -->
             </div>
         </div>
     </div>
+</div>
     <!-- Add this script tag before your script that uses jQuery functions -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 

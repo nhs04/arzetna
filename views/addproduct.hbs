@@ -1,20 +1,42 @@
-<h1>Add Product</h1>
-<form action="/api/addproduct" method="POST" enctype="multipart/form-data">
-  <label for="productName">Product Name:</label><br />
-  <input type="text" id="productName" name="name" required /><br />
+<div class="container">
+  <div class="row">
+    <div class="col">
+      <h1>Add Product</h1>
+      <form
+        action="/api/addproduct"
+        method="POST"
+        enctype="multipart/form-data"
+      >
+        <label for="productName">Product Name:</label><br />
+        <input type="text" id="productName" name="name" required /><br />
 
-  <label for="productPrice">Product Price:</label><br />
-  <input type="number" id="productPrice" name="price" step="0.01" required /><br
-  />
+        <label for="productDescription">Product Description:</label><br />
+        <textarea
+          id="productDescription"
+          name="description"
+          required
+        ></textarea><br />
 
-  <label for="productImage">Product Image:</label><br />
-  <input
-    type="file"
-    id="productImage"
-    name="productImage"
-    required
-    accept="image/*"
-  /><br /><br />
+        <label for="productPrice">Product Price:</label><br />
+        <input
+          type="number"
+          id="productPrice"
+          name="price"
+          step="0.01"
+          required
+        /><br />
 
-  <button type="submit">Add Product</button>
-</form>
+        <label for="productImage">Product Image:</label><br />
+        <input
+          type="file"
+          id="productImage"
+          name="productImage"
+          required
+          accept="image/*"
+        /><br /><br />
+
+        <button type="submit" class="btn btn-primary">Add Product</button>
+      </form>
+    </div>
+  </div>
+</div>

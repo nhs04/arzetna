@@ -1,7 +1,7 @@
 <div class="container">
   {{#if message}}
-<div class="row">
-  <div class="col-6 mx-auto text-center">
+    <div class="row">
+      <div class="col-6 mx-auto text-center">
         <div class="alert alert-danger" role="alert">
           {{message}}
         </div>
@@ -10,33 +10,34 @@
   {{/if}}
   <div class="row">
     <div class="col-6 mx-auto">
-    <div class="card">
-      <div class="card-body">
-        <h2 class="card-title">Login</h2>
-        <form action="/login" method="POST">
-          <div class="mb-3">
-            <label class="form-label" for="username">Username</label>
-            <input
-              class="form-control"
-              type="text"
-              name="username"
-              placeholder="Username"
-              value="{{login.username}}"
-            />
-          </div>
-          <div class="mb-3">
-            <label class="form-label" for="password">Password</label>
-            <input
-              class="form-control"
-              type="password"
-              name="password"
-              placeholder="Password"
-              value="{{login.password}}"
-            />
-          </div>
-          <button type="submit" class="btn btn-primary">Login</button>
-        </form>
-        <p>Don't have an account? <a href="/signup">Sign up</a></p>
+      <div class="card">
+        <div class="card-body">
+          <h2 class="card-title">Login</h2>
+          <form action="/login" method="POST">
+            <div class="mb-3">
+              <label class="form-label" for="username">Username</label>
+              <input
+                class="form-control"
+                type="text"
+                name="username"
+                placeholder="Username"
+                value="{{login.username}}"
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="password">Password</label>
+              <input
+                class="form-control"
+                type="password"
+                name="password"
+                placeholder="Password"
+                value="{{login.password}}"
+              />
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+          </form>
+          <p>Don't have an account? <a href="/signup">Sign up</a></p>
+        </div>
       </div>
     </div>
   </div>
