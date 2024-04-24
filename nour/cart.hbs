@@ -1,0 +1,75 @@
+<div class="container mt-4">
+    <h1>Your Cart</h1>
+    {{#if cart}}
+    <div class="row">
+        {{#each cart.products}}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="{{imageLink}}" class="card-img-top" alt="{{name}}" style="height: 200px; object-fit: cover;">
+                <div class="card-body">
+                    <h5 class="card-title">{{name}}</h5>
+                    <p class="card-text">Price: {{price}} {{currency}}</p>
+                    <p class="card-text">Quantity: {{quantity}}</p>
+                    {{!-- <button class="btn btn-danger" onclick="removeFromCart('{{productId}}')">Reduce Quantity</button> --}}
+                    <button class="btn btn-danger" onclick="removeFromCart('{{productId}}')">Remove from Cart</button>
+                </div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+    <div class="mt-4">
+        <h3>Total Price: {{cart.totalPrice}} {{cart.products.[0].currency}}</h3>
+        <button class="btn btn-success" onclick="purchase()">Purchase</button>
+    </div>
+    {{else}}
+    <p>Your cart is empty</p>
+    {{/if}}
+</div>
+
+<script>
+    function removeFromCart(productId) {
+        fetch('/api/cart/remove', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ productId })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to remove item from cart');
+            }
+            // Reload the page after successfully removing item from cart
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Error removing item from cart:', error);
+            // Handle errors, e.g., display an error message to the user
+        });
+    }
+
+    function purchase() {
+        fetch('/api/cart/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status == 401){
+                    alert("You are not approved, you cannot purchase items");
+                    return;
+                }
+                throw new Error('Failed to complete purchase');
+            }
+            alert('Purchase completed successfully');
+            // Redirect to the home page after successfully completing purchase
+            window.location.href = '/';
+        })
+        .catch(error => {
+            console.error('Error completing purchase:', error);
+            // Handle errors, e.g., display an error message to the user
+        });
+    }
+</script>

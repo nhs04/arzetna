@@ -1,0 +1,98 @@
+    <h1>Welcome, {{userName}}!</h1>
+    <button class="btn btn-primary" onclick="window.location.href='/seller/addproduct'">Add Product</button>
+    <h2>Your Products</h2>
+    <ul>
+        {{#each products}}
+            <li>
+                <div id="product_{{productId}}">
+                    <strong>{{name}}</strong><br>
+                    <img src="{{imageLink}}" alt="{{name}}" width="200" height="200"><br>
+                    <span id="price_{{productId}}">Price: {{price}} {{currency}}</span><br>
+                    {{#if isAvailable}}
+                        <span id="availability_{{productId}}">Availability: Available</span><br>
+                    {{else}}
+                        <span id="availability_{{productId}}">Availability: Out of Stock</span><br>
+                    {{/if}}
+                    <button class="btn btn-primary" onclick="editProduct('{{productId}}')">Edit</button>
+                    <button class="btn btn-danger" onclick="deleteProduct('{{productId}}')">Delete</button>
+                </div>
+                <div id="edit_{{productId}}" style="display:none;">
+                    <input type="text" id="edit_name_{{productId}}" value="{{name}}"><br>
+                    <input type="text" id="edit_imageLink_{{productId}}" value="{{imageLink}}"><br>
+                    <input type="number" id="edit_price_{{productId}}" value="{{price}}"><br>
+                    <input type="checkbox" id="edit_isAvailable_{{productId}}" {{#if isAvailable}}checked{{/if}}> Available<br>
+                    <button class="btn btn-primary" onclick="saveEdit('{{productId}}')">Save Edit</button>
+                    <button class="btn btn-secondary" onclick="cancelEdit('{{productId}}')">Cancel Edit</button>
+                </div>
+            </li>
+        {{/each}}
+    </ul>
+
+    <script>
+        function editProduct(productId) {
+            document.getElementById(`product_${productId}`).style.display = 'none';
+            document.getElementById(`edit_${productId}`).style.display = 'block';
+        }
+
+        function cancelEdit(productId) {
+            document.getElementById(`product_${productId}`).style.display = 'block';
+            document.getElementById(`edit_${productId}`).style.display = 'none';
+        }
+
+        function saveEdit(productId) {
+            const name = document.getElementById(`edit_name_${productId}`).value;
+            const imageLink = document.getElementById(`edit_imageLink_${productId}`).value;
+            const price = document.getElementById(`edit_price_${productId}`).value;
+            const isAvailable = document.getElementById(`edit_isAvailable_${productId}`).checked;
+
+            // Send API call to save edits
+            fetch('/api/product/edit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    productId,
+                    name,
+                    imageLink,
+                    price,
+                    isAvailable
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to save edits');
+                }
+                // Handle success.
+                alert('Edits saved successfully');
+                //Refresh the page
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error saving edits:', error);
+                // Handle errors, e.g., display an error message to the user
+            });
+        }
+
+        function deleteProduct(productId) {
+            // Send API call to delete product
+            fetch('/api/product/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ productId })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to delete product');
+                }
+                // Handle success, e.g., refresh the product list
+                document.getElementById(`product_${productId}`).remove();
+            })
+            .catch(error => {
+                console.error('Error deleting product:', error);
+                // Handle errors, e.g., display an error message to the user
+            });
+        }
+    </script>
