@@ -1,118 +1,75 @@
-<!DOCTYPE html>
-<html lang="en" class="h-100">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{title}}</title>
-    <link rel="stylesheet" href="/assets/bootstrap/css/bootstrap.css">
-    <link rel="stylesheet" href="/stylesheets/style.css">
-    <script src="/assets/bootstrap/js/bootstrap.bundle.js"></script>
-</head>
-<body class="d-flex flex-column h-100">
-    <header>
-        <nav class="navbar navbar-expand-lg">
-            <div class="container-fluid ps-2 pe-2">
-                <a class="navbar-brand" href="/">Farmer's Market</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div id="navbarNav" class="collapse navbar-collapse">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a href="/" class="nav-link">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/buyer/shop" class="nav-link">Shops</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/buyer/cart" class="nav-link">Cart</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <a href="/cart" class="nav-link">
-                                <i class="fas fa-shopping-cart"></i>
-                            </a>
-                        </li>
-                    </ul>
+<div class="container mt-4">
+    <h1>Your Cart</h1>
+    {{#if cart}}
+    <div class="row">
+        {{#each cart.products}}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="{{imageLink}}" class="card-img-top" alt="{{name}}" style="height: 200px; object-fit: cover;">
+                <div class="card-body">
+                    <h5 class="card-title">{{name}}</h5>
+                    <p class="card-text">Price: {{price}} {{currency}}</p>
+                    <p class="card-text">Quantity: {{quantity}}</p>
+                    {{!-- <button class="btn btn-danger" onclick="removeFromCart('{{productId}}')">Reduce Quantity</button> --}}
+                    <button class="btn btn-danger" onclick="removeFromCart('{{productId}}')">Remove from Cart</button>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container mt-4">
-        <h1>Your Cart</h1>
-        {{#if cart}}
-        <div class="row">
-            {{#each cart.products}}
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <img src="{{imageLink}}" class="card-img-top" alt="{{name}}" style="height: 200px; object-fit: cover;">
-                    <div class="card-body">
-                        <h5 class="card-title">{{name}}</h5>
-                        <p class="card-text">Price: {{price}} {{currency}}</p>
-                        <p class="card-text">Quantity: {{quantity}}</p>
-                        {{!-- <button class="btn btn-danger" onclick="removeFromCart('{{productId}}')">Reduce Quantity</button> --}}
-                        <button class="btn btn-danger" onclick="removeFromCart('{{productId}}')">Remove from Cart</button>
-                    </div>
-                </div>
-            </div>
-            {{/each}}
         </div>
-        <div class="mt-4">
-            <h3>Total Price: {{cart.totalPrice}} {{cart.products.[0].currency}}</h3>
-            <button class="btn btn-success" onclick="purchase()">Purchase</button>
-        </div>
-        {{else}}
-        <p>Your cart is empty</p>
-        {{/if}}
+        {{/each}}
     </div>
+    <div class="mt-4">
+        <h3>Total Price: {{cart.totalPrice}} {{cart.products.[0].currency}}</h3>
+        <button class="btn btn-success" onclick="purchase()">Purchase</button>
+    </div>
+    {{else}}
+    <p>Your cart is empty</p>
+    {{/if}}
+</div>
 
-    <script>
-        function removeFromCart(productId) {
-            fetch('/api/cart/remove', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ productId })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to remove item from cart');
-                }
-                // Reload the page after successfully removing item from cart
-                window.location.reload();
-            })
-            .catch(error => {
-                console.error('Error removing item from cart:', error);
-                // Handle errors, e.g., display an error message to the user
-            });
-        }
+<script>
+    function removeFromCart(productId) {
+        fetch('/api/cart/remove', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ productId })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to remove item from cart');
+            }
+            // Reload the page after successfully removing item from cart
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Error removing item from cart:', error);
+            // Handle errors, e.g., display an error message to the user
+        });
+    }
 
-        function purchase() {
-            fetch('/api/cart/checkout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
+    function purchase() {
+        fetch('/api/cart/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status == 401){
+                    alert("You are not approved, you cannot purchase items");
+                    return;
                 }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    if (response.status == 401){
-                        alert("You are not approved, you cannot purchase items");
-                        return;
-                    }
-                    throw new Error('Failed to complete purchase');
-                }
-                alert('Purchase completed successfully');
-                // Redirect to the home page after successfully completing purchase
-                window.location.href = '/';
-            })
-            .catch(error => {
-                console.error('Error completing purchase:', error);
-                // Handle errors, e.g., display an error message to the user
-            });
-        }
-    </script>
-</body>
-</html>
+                throw new Error('Failed to complete purchase');
+            }
+            alert('Purchase completed successfully');
+            // Redirect to the home page after successfully completing purchase
+            window.location.href = '/';
+        })
+        .catch(error => {
+            console.error('Error completing purchase:', error);
+            // Handle errors, e.g., display an error message to the user
+        });
+    }
+</script>

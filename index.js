@@ -50,6 +50,33 @@ const bucket = storage.bucket('gs://farmers-shop-d541e.appspot.com');
 
 const upload = multer({ dest: 'uploads/' });
 
+app.use(async (req, res, next) => {
+    if (
+      !req.path.endsWith("logout") &&
+      !session.user &&
+      (req.signedCookies?.userId || req.cookies?.userId)
+    ) {
+      // Load user from the database using the userId stored in the cookie
+      const authService = new AuthService();
+      // Attempt to find a user that has a related seller profile
+      session.user = await authService.getUserById(
+        parseInt(req.signedCookies?.userId || req.cookies?.userId)
+      );
+      console.log("Loaded user with seller info", session.user);
+    }
+    // Set a global variable accessible in all templates
+    res.locals.currentUser = session.user;
+  
+    if (session.user) {
+      res.locals.isSeller = !!session.user.seller;
+      res.locals.isBuyer = !!session.user.buyer;
+      res.locals.isAdmin = session.user.userType == "admin";
+    }
+  
+    next();
+  });
+  
+
 app.get('/', async (req,res)=>{
     const isLoggedIn = req.session.isLoggedIn;
     const isSeller = req.session.isSeller;

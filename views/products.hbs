@@ -1,253 +1,150 @@
-<!DOCTYPE html>
-<html lang="en" class="h-100">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-    <link rel="stylesheet" href="/assets/bootstrap/css/bootstrap.css">
-    <link rel="stylesheet" href="/stylesheets/style.css">
-    <script src="/assets/bootstrap/js/bootstrap.bundle.js"></script>
-</head>
-<body class="d-flex flex-column h-100">
-    <header>
-        <nav class="navbar navbar-expand-lg">
-            <div class="container-fluid ps-2 pe-2">
-                <a class="navbar-brand" href="/">Farmer's Market</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div id="navbarNav" class="collapse navbar-collapse">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a href="/" class="nav-link">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/buyer/shop" class="nav-link">Shops</a>
-                        </li>
-                        {{#if isSeller}}
-                        <li class="nav-item">
-                            <a href="/seller/products" class="nav-link">Products</a>
-                        </li>
-                        {{/if}}
-                        <li class="nav-item">
-                            <a href="/buyer/cart" class="nav-link">Cart</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <a href="/cart" class="nav-link">
-                                <i class="fas fa-shopping-cart"></i>
-                            </a>
-                        </li>
-                        {{#if isLoggedIn}}
-                            <li class="nav-item">
-                                <a href="/my-profile" class="nav-link">{{ userName }}</a>
-                            </li>
-                        {{else}}
-                            <li class="nav-item">
-                                <a href="/login" class="nav-link">Login</a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="/signup" class="nav-link">Sign Up</a>
-                            </li>
-                        {{/if}}
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container mt-4">
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <input id="searchInput" type="text" class="form-control" placeholder="Search by product name" onkeyup="searchProducts()">
-            </div>
-            <div class="col-md-6 text-end">
-                <button id="sortButton" class="btn btn-primary" onclick="toggleSort()">Sort by Price</button>
-            </div>
-        </div>
-<div class="row">
-            {{#if products}}
-                {{#each products}}
-                    <div class="col-md-4 mb-4 product-card">
-                        <div class="card">
-                            <img src="{{ imageLink }}" class="card-img-top" alt="{{ name }}" style="height: 200px; object-fit: cover;">
-                            <div class="card-body">
-                                <h5 class="card-title">{{ name }}</h5>
-                                <p class="card-text">{{ price }} {{ currency }}</p>
-                                {{#if isAvailable}}
-                                    <p class="card-text">Available</p>
-                                    <input id="quantity-{{ productId }}" type="number" class="form-control mb-2" placeholder="Quantity">
-                                    <button class="btn btn-primary mb-2" onclick="addToCart('{{ productId }}')">Add to Cart</button>
-                                    <!-- Add review form -->
-                                    <form onsubmit="addReview(event, '{{ productId }}')">
-                                        <div class="mb-2">
-                                            <label for="rating">Rating:</label>
-                                            <input type="number" id="rating-{{ productId }}" name="rating" min="1" max="5" required>
-                                        </div>
-                                        <div class="mb-2">
-                                            <label for="review">Review:</label>
-                                            <textarea id="review-{{ productId }}" name="review" rows="3" required></textarea>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary">Add Review</button>
-                                    </form>
-                                {{else}}
-                                    <p class="card-text">Out of Stock</p>
-                                    <button class="btn btn-primary" disabled>Add to Cart</button>
-                                {{/if}}
-                                <!-- Product reviews section -->
-                                {{#if reviews}}
-                                    <h6>Reviews:</h6>
-                                    <ul>
-                                        {{#each reviews}}
-                                            <li>
-                                                <strong>{{ this.username }}</strong> - Rating: {{ this.rating }}
-                                                <br>
-                                                {{ this.review }}
-                                            </li>
-                                        {{/each}}
-                                    </ul>
-                                {{else}}
-                                    <p>No reviews yet.</p>
-                                {{/if}}
-                            </div>
-                        </div>
-                    </div>
-                {{/each}}
-            {{else}}
-                <p>No products available.</p>
-            {{/if}}
-        </div>
+<div class="container mt-4">
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <input
+        id="searchInput"
+        type="text"
+        class="form-control"
+        placeholder="Search by product name"
+        onkeyup="searchProducts()"
+      />
     </div>
-    <script>
-        let sortByPrice = false;
+    <div class="col-md-6 text-end">
+      <button
+        id="sortButton"
+        class="btn btn-primary"
+        onclick="toggleSort()"
+      >Sort by Price</button>
+    </div>
+  </div>
+  <div class="row">
+    {{#if products}}
+      {{#each products}}
+        <div class="col-md-4 mb-4 product-card">
+          <div class="card">
+            <img
+              src="{{imageLink}}"
+              class="card-img-top"
+              alt="{{name}}"
+              style="height: 200px; object-fit: cover;"
+            />
+            <div class="card-body">
+              <h5 class="card-title">{{name}}</h5>
+              <p class="card-text">{{price}} {{currency}}</p>
+              {{#if isAvailable}}
+                <p class="card-text">Available</p>
+                <input
+                  id="quantity-{{productId}}"
+                  type="number"
+                  class="form-control mb-2"
+                  placeholder="Quantity"
+                />
+                <button
+                  class="btn btn-primary mb-2"
+                  onclick="addToCart('{{productId}}')"
+                >Add to Cart</button>
+                <!-- Add review form -->
+                <form onsubmit="addReview(event, '{{productId}}')">
+                  <div class="mb-2">
+                    <label for="rating">Rating:</label>
+                    <input
+                      type="number"
+                      id="rating-{{productId}}"
+                      name="rating"
+                      min="1"
+                      max="5"
+                      required
+                    />
+                  </div>
+                  <div class="mb-2">
+                    <label for="review">Review:</label>
+                    <textarea
+                      id="review-{{productId}}"
+                      name="review"
+                      rows="3"
+                      required
+                    ></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary">Add Review</button>
+                </form>
+              {{else}}
+                <p class="card-text">Out of Stock</p>
+                <button class="btn btn-primary" disabled>Add to Cart</button>
+              {{/if}}
+              <!-- Product reviews section -->
+              {{#if reviews}}
+                <h6>Reviews:</h6>
+                <ul>
+                  {{#each reviews}}
+                    <li>
+                      <strong>{{this.username}}</strong>
+                      - Rating:
+                      {{this.rating}}
+                      <br />
+                      {{this.review}}
+                    </li>
+                  {{/each}}
+                </ul>
+              {{else}}
+                <p>No reviews yet.</p>
+              {{/if}}
+            </div>
+          </div>
+        </div>
+      {{/each}}
+    {{else}}
+      <p>No products available.</p>
+    {{/if}}
+  </div>
+</div>
+<script>
+  let sortByPrice = false; function searchProducts() { var input, filter, cards,
+  cardContainer, title, i; input = document.getElementById("searchInput");
+  filter = input.value.toUpperCase(); cardContainer =
+  document.getElementsByClassName("container")[0]; cards =
+  cardContainer.getElementsByClassName("product-card"); for (i = 0; i <
+  cards.length; i++) { title = cards[i].querySelector(".card-title"); if
+  (title.innerText.toUpperCase().indexOf(filter) > -1) { cards[i].style.display
+  = ""; } else { cards[i].style.display = "none"; } } } function toggleSort() {
+  sortByPrice = !sortByPrice; const sortButton =
+  document.getElementById("sortButton"); if (sortByPrice) {
+  sortButton.textContent = "Sort by Name"; sortProductsByPrice(); } else {
+  sortButton.textContent = "Sort by Price"; sortProductsByName(); } } function
+  sortProductsByPrice() { const cardContainer =
+  document.getElementsByClassName("container")[0]; const cards =
+  Array.from(cardContainer.getElementsByClassName("product-card"));
+  cards.sort((a, b) => { const priceA =
+  parseFloat(a.querySelector(".card-text").textContent.split(" ")[0]); const
+  priceB = parseFloat(b.querySelector(".card-text").textContent.split(" ")[0]);
+  return priceA - priceB; }); cards.forEach(card =>
+  cardContainer.appendChild(card)); } function sortProductsByName() { const
+  cardContainer = document.getElementsByClassName("container")[0]; const cards =
+  Array.from(cardContainer.getElementsByClassName("product-card"));
+  cards.sort((a, b) => { const nameA =
+  a.querySelector(".card-title").textContent.toUpperCase(); const nameB =
+  b.querySelector(".card-title").textContent.toUpperCase(); if (nameA < nameB) {
+  return -1; } if (nameA > nameB) { return 1; } return 0; }); cards.forEach(card
+  => cardContainer.appendChild(card)); } function addToCart(productId) {
+  console.log(productId); var quantity = document.getElementById('quantity-' +
+  productId).value; if (!quantity) { alert('Please enter a quantity'); return; }
+  if (quantity <= 0) { alert('Quantity must be greater than 0'); return; } //
+  Check if there's already a product in the cart const existingProducts =
+  document.querySelectorAll('.cart-product'); if (existingProducts.length > 0) {
+  alert('You can only add one product to the cart at a time.'); return; }
+  fetch('/api/cart/add-product', { method: 'POST', headers: { 'Content-Type':
+  'application/json' }, body: JSON.stringify({ productId: productId, quantity:
+  quantity }) }).then(response => { if (response.ok) { alert('Product added to
+  cart'); } else { alert('Failed to add product to cart'); } }).catch(error => {
+  console.error('Error:', error); }); } function addReview(event, productId) {
+  event.preventDefault(); const rating = document.getElementById('rating-' +
+  productId).value; const review = document.getElementById('review-' +
+  productId).value; if (!rating || !review) { alert('Please provide rating and
+  review'); return; } const reqBody = JSON.stringify({ productId: productId,
+  rating: rating, review: review }); fetch('/buyer/addreview', { method: 'POST',
+  headers: { 'Content-Type': 'application/json' }, body: reqBody
+  }).then(response => { if (response.ok) { alert('Review added successfully');
+  // Refresh the page or update UI as needed } else { alert('Failed to add
+  review'); } }).catch(error => { console.error('Error:', error); alert('An
+  error occurred while adding the review'); }); }
 
-        function searchProducts() {
-            var input, filter, cards, cardContainer, title, i;
-            input = document.getElementById("searchInput");
-            filter = input.value.toUpperCase();
-            cardContainer = document.getElementsByClassName("container")[0];
-            cards = cardContainer.getElementsByClassName("product-card");
-            for (i = 0; i < cards.length; i++) {
-                title = cards[i].querySelector(".card-title");
-                if (title.innerText.toUpperCase().indexOf(filter) > -1) {
-                    cards[i].style.display = "";
-                } else {
-                    cards[i].style.display = "none";
-                }
-            }
-        }
-
-        function toggleSort() {
-            sortByPrice = !sortByPrice;
-            const sortButton = document.getElementById("sortButton");
-            if (sortByPrice) {
-                sortButton.textContent = "Sort by Name";
-                sortProductsByPrice();
-            } else {
-                sortButton.textContent = "Sort by Price";
-                sortProductsByName();
-            }
-        }
-
-        function sortProductsByPrice() {
-            const cardContainer = document.getElementsByClassName("container")[0];
-            const cards = Array.from(cardContainer.getElementsByClassName("product-card"));
-            cards.sort((a, b) => {
-                const priceA = parseFloat(a.querySelector(".card-text").textContent.split(" ")[0]);
-                const priceB = parseFloat(b.querySelector(".card-text").textContent.split(" ")[0]);
-                return priceA - priceB;
-            });
-            cards.forEach(card => cardContainer.appendChild(card));
-        }
-
-        function sortProductsByName() {
-            const cardContainer = document.getElementsByClassName("container")[0];
-            const cards = Array.from(cardContainer.getElementsByClassName("product-card"));
-            cards.sort((a, b) => {
-                const nameA = a.querySelector(".card-title").textContent.toUpperCase();
-                const nameB = b.querySelector(".card-title").textContent.toUpperCase();
-                if (nameA < nameB) {
-                    return -1;
-                }
-                if (nameA > nameB) {
-                    return 1;
-                }
-                return 0;
-            });
-            cards.forEach(card => cardContainer.appendChild(card));
-        }
-
-        function addToCart(productId) {
-    console.log(productId);
-    var quantity = document.getElementById('quantity-' + productId).value;
-    if (!quantity) {
-        alert('Please enter a quantity');
-        return;
-    }
-    if (quantity <= 0) {
-        alert('Quantity must be greater than 0');
-        return;
-    }
-
-    // Check if there's already a product in the cart
-    const existingProducts = document.querySelectorAll('.cart-product');
-    if (existingProducts.length > 0) {
-        alert('You can only add one product to the cart at a time.');
-        return;
-    }
-
-    fetch('/api/cart/add-product', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            productId: productId,
-            quantity: quantity
-        })
-    }).then(response => {
-        if (response.ok) {
-            alert('Product added to cart');
-        } else {
-            alert('Failed to add product to cart');
-        }
-    }).catch(error => {
-        console.error('Error:', error);
-    });
-}
-
-function addReview(event, productId) {
-            event.preventDefault();
-            const rating = document.getElementById('rating-' + productId).value;
-            const review = document.getElementById('review-' + productId).value;
-            if (!rating || !review) {
-                alert('Please provide rating and review');
-                return;
-            }
-            const reqBody = JSON.stringify({
-                productId: productId,
-                rating: rating,
-                review: review
-            });
-            fetch('/buyer/addreview', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: reqBody
-            }).then(response => {
-                if (response.ok) {
-                    alert('Review added successfully');
-                    // Refresh the page or update UI as needed
-                } else {
-                    alert('Failed to add review');
-                }
-            }).catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while adding the review');
-            });
-        }
-
-    </script>
-</body>
-</html>
+</script>
