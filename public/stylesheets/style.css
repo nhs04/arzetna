@@ -114,3 +114,7 @@ footer {
 .login-container button:hover {
   background-color: #45a049;
 }
+
+.show-error input:not(:focus):invalid {
+  border: red 1px solid;
+}

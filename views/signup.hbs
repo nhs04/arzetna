@@ -1,7 +1,7 @@
-<div class="container mt-4">
+<div class="container">
     {{#if error}}
     <div class="row">
-        <div class="col">
+        <div class="col-6 text-center">
             <div class="alert alert-danger">
                 <p>{{ error }}</p>
             </div>
@@ -14,20 +14,21 @@
                 <h2>Sign Up</h2>
                 <div class="mb-3">
                     <label for="userName" class="form-label">User Name</label>
-                    <input type="text" id="userName" name="userName" value="{{ signupRequest.userName }}" class="form-control" required>
+                    <input type="text" id="userName" name="userName" value="{{ signupRequest.userName }}" class="form-control" required placeholder="Enter user name">
                 </div>
                 <div class="mb-3">
                     <label for="email" class="form-label">Email</label>
-                    <input type="email" id="email" name="email" value="{{ signupRequest.email }}" class="form-control" autocomplete="new-password" required>
+                    <input type="email" id="email" name="email" value="{{ signupRequest.email }}" class="form-control" autocomplete="new-password" required placeholder="Enter your email">
                 </div>
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
-                    <input type="password" id="password" name="password" value="{{ signupRequest.password }}" class="form-control" autocomplete="new-password" required>
+                    <input type="password" id="password" name="password" value="{{ signupRequest.password }}" class="form-control" autocomplete="new-password" required placeholder="Enter your password">
                     <small>Password must be at least 8 characters long and contain at least one number and one special character</small>
                 </div>
                 <div class="mb-3">
                     <label for="confirm_password" class="form-label">Confirm Password</label>
-                    <input type="password" id="confirm_password" name="confirm_password" value="{{ signupRequest.confirm_password }}" class="form-control" required>
+                    <input type="password" id="confirm_password" name="confirm_password" value="{{ signupRequest.confirm_password }}" class="form-control" required
+                    placeholder="Confirm your password">
                 </div>
                 <div class="mb-3">
                     <label for="role" class="form-label">Account Type</label>
@@ -41,7 +42,8 @@
                     <h2>Add Shop</h2>
                     <div class="mb-3">
                         <label for="shopName" class="form-label">Shop Name</label>
-                        <input type="text" id="shopName" name="shopName" class="form-control" required>
+                        <input type="text" id="shopName" name="shopName" class="form-control" required
+                        placeholder="Enter your shop's name">
                     </div>
                     <div class="mb-3">
                         <label for="description" class="form-label">Description</label>
@@ -52,8 +54,11 @@
                         <input type="file" id="shopImage" name="shopImage" class="form-control" accept="image/*" required>
                     </div>
                 </div>
-                <button type="button" class="btn btn-primary" onclick="validateForm()">Sign Up</button>
+                <button id="signup-btn" type="button" class="btn btn-primary" onclick="validateForm()">Sign Up</button>
                 <p class="login-link">Already have an account? <a href="#">Log in</a></p>
+                <div id="spinner" class="spinner-border text-success" role="status" style="display: none;">
+                    <span class="sr-only">Loading...</span>
+                </div>
             </form>
         </div>
     </div>
@@ -61,6 +66,7 @@
 
 <script>
     function validateForm() {
+        document.getElementById('signupForm').classList.add('show-error');
         var fullName = document.getElementById('userName').value.trim();
         var email = document.getElementById('email').value.trim();
         var password = document.getElementById('password').value;
@@ -113,18 +119,28 @@ formData.append('shopName', document.getElementById('shopName').value);
 formData.append('description', document.getElementById('description').value);
 formData.append('shopImage', shopImage);
 
+var spinner = document.getElementById('spinner');
+var sbtn = document.getElementById('signup-btn');
+
+sbtn.disabled = true;
+spinner.style.display = 'block';
+
 // Submit the form using fetch
 fetch('/api/signup', {
     method: 'POST',
     body: formData
 }).then(response => {
+    spinner.style.display = 'none';
+    sbtn.disabled = false;
     if (response.ok) {
-        alert('Account created successfully');
+        alert('Please check your inbox for verification email');
         window.location.href = '/homepage'; // Redirect to homepage or another page
     } else {
         alert('Failed to create account');
     }
 }).catch(error => {
+    spinner.style.display = 'none';
+    sbtn.disabled = false;
     console.error('Error:', error);
     alert('An error occurred while creating account');
 });
