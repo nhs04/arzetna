@@ -18,9 +18,13 @@
                             <p class="card-text">{{ price }} {{ currency }}</p>
                             {{#if isAvailable}}
                                 <p class="card-text">Available</p>
+                                {{#if isAdmin}}
+                                <p></p>
+                                {{else}}
                                 <input id="quantity-{{ productId }}" type="number" class="form-control mb-2" placeholder="Quantity">
                                 <button class="btn btn-primary mb-2" onclick="addToCart('{{ productId }}')">Add to Cart</button>
                                 <button type="button" class="btn btn-primary mb-2" onclick="openAddReviewModal('{{ productId }}')">Add Review</button>
+                                {{/if}}
                             {{else}}
                                 <p class="card-text">Out of Stock</p>
                                 <button class="btn btn-primary" disabled>Add to Cart</button>
@@ -131,11 +135,12 @@
             sortByPrice = !sortByPrice;
             const sortButton = document.getElementById("sortButton");
             if (sortByPrice) {
-                sortButton.textContent = "Sort by Name";
+                sortButton.textContent = "Reset Sort";
                 sortProductsByPrice();
             } else {
                 sortButton.textContent = "Sort by Price";
-                sortProductsByName();
+                window.location.reload();
+                //sortProductsByName();
             }
         }
 

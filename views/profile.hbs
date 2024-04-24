@@ -12,10 +12,11 @@
                     <p class="card-text">Role: {{ data.role }}</p>
                     {{#if isSeller}}
                         <a href="/seller/getorders" class="btn btn-primary">View Orders</a>
-                    {{/if}}
-                    {{#if isAdmin}}
+                    {{else if isAdmin}}
                         <a href="/admin/sellerrequests" class="btn btn-primary">Seller Requests</a>
                         <a href="/admin/getbuyers" class="btn btn-primary">View Buyers</a>
+                    {{else}}
+                        <a href="/buyer/orders" class="btn btn-primary">View Orders</a>
                     {{/if}}
                     
                     <a href="/logout" class="btn btn-primary">Log out</a>

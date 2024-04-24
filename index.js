@@ -525,16 +525,16 @@ app.post("/api/addproduct", upload.single("productImage"), async (req, res) => {
 
   try {
     var uploadResp = await bucket.upload(productImage.path, {
-      destination: products / `${fileName}`,
-      metadata: {
-        contentType: productImage.mimetype,
-      },
+        destination: `products/${fileName}`,
+        metadata: {
+            contentType: productImage.mimetype
+        }
     });
-  } catch (error) {
-    console.error("Error uploading image:", error);
-    res.status(500).send("Error uploading image");
+} catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).send('Error uploading image');
     return;
-  }
+}
 
   const imageLink = `https://firebasestorage.googleapis.com/v0/b/${
     bucket.name
@@ -612,6 +612,7 @@ app.get("/seller/products", async (req, res) => {
   productsSnapshot.forEach((doc) => {
     products.push({ productId: doc.id, ...doc.data() });
   });
+  console.log(products);
   res.render("sellerproducts", {
     title: "Products",
     isLoggedIn: req.session.isLoggedIn,
@@ -1071,6 +1072,36 @@ app.get("/api/products/:productId/reviews", async (req, res) => {
     console.error("Error fetching reviews:", error);
     res.status(500).send("Error fetching reviews");
   }
+});
+
+app.get('/buyer/orders', async (req, res) => {
+  //Get all the previous orders made by the user
+  if (!req.session.isLoggedIn) {
+    res.render("401", {
+      title: "Unauthorized",
+      isLoggedIn: req.session.isLoggedIn,
+      isSeller: req.session.isSeller,
+      userName: req.session.userName,
+      userId: req.session.userId,
+      isAdmin: req.session.isAdmin,
+    });
+  }
+  const userId = req.session.userId;
+  const ordersRef = db.collection("orders");
+  const snapshot = await ordersRef.where("userId", "==", userId).get();
+  const orders = [];
+  snapshot.forEach((doc) => {
+    orders.push({ orderId: doc.id, ...doc.data() });
+  });
+  res.render("buyerorders", {
+    title: "Orders",
+    isLoggedIn: req.session.isLoggedIn,
+    isSeller: req.session.isSeller,
+    userName: req.session.userName,
+    userId: req.session.userId,
+    isAdmin: req.session.isAdmin,
+    orders: orders,
+  });
 });
 
 app.post("/buyer/addreview", async (req, res) => {
