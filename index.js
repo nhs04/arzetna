@@ -1,9 +1,40 @@
 const port = 3001;
 const environment = {
   port: port,
-  webAppUrl: `http://localhost:${port}`,
+  webAppUrl: `https://arzetna.onrender.com`,
   appName: "Arztna",
-  fromEmail: "signup-confirmation-noreply@farmers-market-leb.com",
+  fromEmail: "signup@arzetna.com",
+  smtp: {
+    host: "smtp.ethereal.email",
+    port: 587,
+    auth: {
+      user: "tristin81@ethereal.email",
+      pass: "PmZTWTf9ng7PBYxwME",
+    },
+  },
+  //   smtp: {
+  //     server: "smtp.sendgrid.net",
+  //     username: "apikey",
+  //     password:
+  //       "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",
+  //     port: 465,
+  //     ssl: true,
+  //   },
+  //   smtp: {
+  //     server: "live.smtp.mailtrap.io",
+  //     username: "api",
+  //     password: "endings signalled avails appears sweetness butter",
+  //     port: 587,
+  //     ssl: false,
+  //   },
+  //
+  //   smtp: {
+  //     server: "live.smtp.mailtrap.io",
+  //     username: "api",
+  //     password: "ad1527a7cbc3b2a34f3a417bd77c23bc",
+  //     port: 587,
+  //     ssl: false,
+  //   },
 };
 
 const admin = require("firebase-admin");
@@ -249,12 +280,19 @@ app.post("/api/signup", upload.single("shopImage"), async (req, res) => {
     try {
       // Create a Nodemailer transporter using your email service provider
       const transporter = nodemailer.createTransport({
-        host: "smtp.ethereal.email",
-        port: 587,
+        host: environment.smtp.server,
+        port: environment.smtp.port,
         auth: {
-          user: "tristin81@ethereal.email",
-          pass: "PmZTWTf9ng7PBYxwME",
+          user: environment.smtp.username,
+          pass: environment.smtp.password,
         },
+        secure: environment.smtp.ssl,
+        // host: "smtp.ethereal.email",
+        // port: 587,
+        // auth: {
+        //   user: "tristin81@ethereal.email",
+        //   pass: "PmZTWTf9ng7PBYxwME",
+        // },
       });
 
       const html = `Dear ${userData.username},<br>
@@ -525,16 +563,16 @@ app.post("/api/addproduct", upload.single("productImage"), async (req, res) => {
 
   try {
     var uploadResp = await bucket.upload(productImage.path, {
-        destination: `products/${fileName}`,
-        metadata: {
-            contentType: productImage.mimetype
-        }
+      destination: `products/${fileName}`,
+      metadata: {
+        contentType: productImage.mimetype,
+      },
     });
-} catch (error) {
-    console.error('Error uploading image:', error);
-    res.status(500).send('Error uploading image');
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    res.status(500).send("Error uploading image");
     return;
-}
+  }
 
   const imageLink = `https://firebasestorage.googleapis.com/v0/b/${
     bucket.name
@@ -592,7 +630,7 @@ app.get("/seller/products", async (req, res) => {
     return;
   }
 
-  console.log(req.session)
+  console.log(req.session);
 
   const shopsRef = db.collection("shops");
   const snapshot = await shopsRef
@@ -1074,7 +1112,7 @@ app.get("/api/products/:productId/reviews", async (req, res) => {
   }
 });
 
-app.get('/buyer/orders', async (req, res) => {
+app.get("/buyer/orders", async (req, res) => {
   //Get all the previous orders made by the user
   if (!req.session.isLoggedIn) {
     res.render("401", {
