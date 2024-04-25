@@ -5,12 +5,11 @@ const environment = {
   appName: "Arztna",
   fromEmail: "signup@arzetna.com",
   smtp: {
-    host: "smtp.ethereal.email",
+    server: "smtp.ethereal.email",
     port: 587,
-    auth: {
-      user: "tristin81@ethereal.email",
-      pass: "PmZTWTf9ng7PBYxwME",
-    },
+    username: "tristin81@ethereal.email",
+    password: "PmZTWTf9ng7PBYxwME",
+    ssl: false,
   },
   //   smtp: {
   //     server: "smtp.sendgrid.net",
