@@ -201,6 +201,36 @@ app.get("/signup", async (req, res) => {
   });
 });
 
+app.get("/verify/:token", async (req, res, next) => {
+  const token = req.params.token;
+  const usersRef = db.collection("users");
+  const snapshot = await usersRef
+    .where("emailVerificationToken", "==", token)
+    .get();
+  if (snapshot.empty) {
+    res.render("homepage", {
+      title: "Homepage",
+    });
+    return;
+  }
+  const doc = snapshot.docs[0];
+  const user = doc.data();
+
+  const userRef = db.collection("users").doc(doc.id);
+
+
+  user.emailApproved = true;
+  // update the user document
+  // is the below line correct ?
+  await userRef.update({
+    emailApproved: true,
+  });
+
+  res.render("verified", {
+    title: "Email Verified"
+  });
+});
+
 app.post("/api/signup", upload.single("shopImage"), async (req, res) => {
   try {
     // Check if the user already exists
