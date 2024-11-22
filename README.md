@@ -1,4 +1,4 @@
-# Farmers Market Website 
+# Farmers Market Website (Software Engineering Project) 
 A digital marketplace connecting Lebanese farmers with consumers, promoting fresh local produce and sustainability. Empowering agriculture while fostering community and supporting the local economy. 
 https://arzetna.onrender.com 
 
